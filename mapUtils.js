@@ -1,4 +1,5 @@
-const sm = new (require("@mapbox/sphericalmercator"))({ size: 512 });
+const { SphericalMercator } = require("@mapbox/sphericalmercator");
+const sm = new SphericalMercator({ size: 512 });
 
 const overlayLineLayerDef = {
   id: "overlay-line",

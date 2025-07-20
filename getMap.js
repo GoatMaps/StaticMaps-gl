@@ -1,7 +1,7 @@
 const debug = require("debug")("StaticMaps-gl.getMap");
 const genericPool = require("generic-pool");
 const maplibre = require("@maplibre/maplibre-gl-native");
-const request = require("request");
+const fetch = require("node-fetch");
 const fs = require("fs");
 
 maplibre.on("message", function(e) {
@@ -38,58 +38,49 @@ function getMap() {
           'Accept-Encoding': 'gzip, deflate'
         };
         
-        request(
-          {
-            url: req.url,
-            encoding: null,
-            gzip: true,
-            headers: headers,
-            timeout: 10000
-          },
-          function(err, res, body) {
-            var duration = Date.now() - start;
-            if (duration > 500) {
-              if (res === undefined) {
-                // If request timed out response will be undefined
-                debug("Request for " + req.url + " failed in " + duration + "ms.");
-              } else {
-                // Headers are needed for debugging cases of slow responses from AWS s3
-                debug(
-                  "Request for " +
-                    req.url +
-                    " complete in " +
-                    duration +
-                    "ms.  Headers:" +
-                    JSON.stringify(res.headers || null)
-                );
-              }
-            } else {
-              debug("Request for " + req.url + " complete in " + duration + "ms");
-            }
-            if (err) {
-              callback(err);
-            } else if (res.statusCode == 200) {
-              var response = {};
-              if (res.headers.modified) {
-                response.modified = new Date(res.headers.modified);
-              }
-              if (res.headers.expires) {
-                response.expires = new Date(res.headers.expires);
-              }
-              if (res.headers.etag) {
-                response.etag = res.headers.etag;
-              }
-
-              response.data = body;
-
-              callback(null, response);
-            } else {
-              //Dont make rendering fail if a resource is missing
-              debug("Request failed with status " + res.statusCode + " for " + req.url);
-              return callback(null, {});
-            }
+        fetch(req.url, {
+          headers: headers,
+          timeout: 10000
+        })
+        .then(res => {
+          const duration = Date.now() - start;
+          if (duration > 500) {
+            debug(
+              "Request for " +
+                req.url +
+                " complete in " +
+                duration +
+                "ms.  Status:" +
+                res.status
+            );
+          } else {
+            debug("Request for " + req.url + " complete in " + duration + "ms");
           }
-        );
+          
+          if (res.ok) {
+            return res.buffer().then(body => {
+              var response = {};
+              if (res.headers.get('last-modified')) {
+                response.modified = new Date(res.headers.get('last-modified'));
+              }
+              if (res.headers.get('expires')) {
+                response.expires = new Date(res.headers.get('expires'));
+              }
+              if (res.headers.get('etag')) {
+                response.etag = res.headers.get('etag');
+              }
+              response.data = body;
+              callback(null, response);
+            });
+          } else {
+            debug("Request failed with status " + res.status + " for " + req.url);
+            return callback(null, {});
+          }
+        })
+        .catch(err => {
+          debug("Request error for " + req.url + ": " + err.message);
+          callback(err);
+        });
       } else {
         debug(`request for invalid url: "${req.url}"`);
         return callback(`request for invalid url: "${req.url}"`);

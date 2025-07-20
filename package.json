@@ -11,12 +11,12 @@
   "license": "BSD-2-Clause",
   "dependencies": {
     "@maplibre/maplibre-gl-native": "^6.1.0",
-    "@mapbox/sphericalmercator": "^1.1.0",
-    "@turf/bbox": "^6.0.1",
+    "@mapbox/sphericalmercator": "^2.0.1",
+    "@turf/bbox": "^7.2.0",
     "debug": "^4.3.4",
     "express": "^4.18.2",
     "generic-pool": "^3.9.0",
-    "request": "^2.88.2",
+    "node-fetch": "^2.7.0",
     "sharp": "^0.34.1"
   },
   "devDependencies": {},
