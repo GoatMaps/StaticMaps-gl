@@ -16,7 +16,7 @@
     "debug": "^4.3.4",
     "express": "^5.1.0",
     "generic-pool": "^3.9.0",
-    "node-fetch": "^2.7.0",
+    "node-fetch": "^3.3.2",
     "sharp": "^0.34.1"
   },
   "devDependencies": {},

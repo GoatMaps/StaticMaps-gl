@@ -1,7 +1,6 @@
 const debug = require("debug")("StaticMaps-gl.getMap");
 const genericPool = require("generic-pool");
 const maplibre = require("@maplibre/maplibre-gl-native");
-const fetch = require("node-fetch");
 const fs = require("fs");
 
 maplibre.on("message", function(e) {
@@ -38,47 +37,53 @@ function getMap() {
           'Accept-Encoding': 'gzip, deflate'
         };
         
-        fetch(req.url, {
-          headers: headers,
-          timeout: 10000
-        })
-        .then(res => {
-          const duration = Date.now() - start;
-          if (duration > 500) {
-            debug(
-              "Request for " +
-                req.url +
-                " complete in " +
-                duration +
-                "ms.  Status:" +
-                res.status
-            );
-          } else {
-            debug("Request for " + req.url + " complete in " + duration + "ms");
-          }
-          
-          if (res.ok) {
-            return res.buffer().then(body => {
-              var response = {};
-              if (res.headers.get('last-modified')) {
-                response.modified = new Date(res.headers.get('last-modified'));
-              }
-              if (res.headers.get('expires')) {
-                response.expires = new Date(res.headers.get('expires'));
-              }
-              if (res.headers.get('etag')) {
-                response.etag = res.headers.get('etag');
-              }
-              response.data = body;
-              callback(null, response);
-            });
-          } else {
-            debug("Request failed with status " + res.status + " for " + req.url);
-            return callback(null, {});
-          }
-        })
-        .catch(err => {
-          debug("Request error for " + req.url + ": " + err.message);
+        // Use dynamic import for node-fetch 3.x
+        import('node-fetch').then(({ default: fetch }) => {
+          fetch(req.url, {
+            headers: headers,
+            timeout: 10000
+          })
+          .then(res => {
+            const duration = Date.now() - start;
+            if (duration > 500) {
+              debug(
+                "Request for " +
+                  req.url +
+                  " complete in " +
+                  duration +
+                  "ms.  Status:" +
+                  res.status
+              );
+            } else {
+              debug("Request for " + req.url + " complete in " + duration + "ms");
+            }
+            
+            if (res.ok) {
+              return res.buffer().then(body => {
+                var response = {};
+                if (res.headers.get('last-modified')) {
+                  response.modified = new Date(res.headers.get('last-modified'));
+                }
+                if (res.headers.get('expires')) {
+                  response.expires = new Date(res.headers.get('expires'));
+                }
+                if (res.headers.get('etag')) {
+                  response.etag = res.headers.get('etag');
+                }
+                response.data = body;
+                callback(null, response);
+              });
+            } else {
+              debug("Request failed with status " + res.status + " for " + req.url);
+              return callback(null, {});
+            }
+          })
+          .catch(err => {
+            debug("Request error for " + req.url + ": " + err.message);
+            callback(err);
+          });
+        }).catch(err => {
+          debug("Failed to import node-fetch: " + err.message);
           callback(err);
         });
       } else {
