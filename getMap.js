@@ -73,7 +73,7 @@ function getMap() {
 								}
 
 								if (res.ok) {
-									return res.buffer().then((body) => {
+									return res.arrayBuffer().then((body) => {
 										var response = {};
 										if (res.headers.get("last-modified")) {
 											response.modified = new Date(
@@ -86,7 +86,7 @@ function getMap() {
 										if (res.headers.get("etag")) {
 											response.etag = res.headers.get("etag");
 										}
-										response.data = body;
+										response.data = Buffer.from(body);
 										callback(null, response);
 									});
 								} else {
