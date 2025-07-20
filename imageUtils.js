@@ -46,6 +46,25 @@ exports.parseImageFormat = function(format) {
 
 exports.sendImageResponse = function(res, width, height, data, imageFormat) {
   const start = Date.now();
+  
+  // Un-premultiply pixel values
+  // MapLibre GL buffer contains premultiplied values, which are not handled correctly by sharp
+  // since we are dealing with 8-bit RGBA values, normalize alpha onto 0-255 scale and divide
+  // it out of RGB values
+  for (let i = 0; i < data.length; i += 4) {
+    const alpha = data[i + 3];
+    const norm = alpha / 255;
+    if (alpha === 0) {
+      data[i] = 0;
+      data[i + 1] = 0;
+      data[i + 2] = 0;
+    } else {
+      data[i] /= norm;
+      data[i + 1] = data[i + 1] / norm;
+      data[i + 2] = data[i + 2] / norm;
+    }
+  }
+
   const image = sharp(data, {
     raw: {
       width: width,
@@ -64,6 +83,11 @@ exports.sendImageResponse = function(res, width, height, data, imageFormat) {
   }
 
   formattedImage.toBuffer(function(err, data, info) {
+    if (err) {
+      debug("Error saving image: " + err);
+      res.status(500).send("Error saving image");
+      return;
+    }
     debug("Saving image complete in " + (Date.now() - start) + "ms");
     res.type(imageFormat.mimetype);
     res.send(data);

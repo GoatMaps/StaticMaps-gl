@@ -1,20 +1,19 @@
 const debug = require("debug")("StaticMaps-gl.getMap");
 const genericPool = require("generic-pool");
-const mbgl = require("@mapbox/mapbox-gl-native");
+const maplibre = require("@maplibre/maplibre-gl-native");
 const request = require("request");
 const fs = require("fs");
 
-mbgl.on("message", function(e) {
-  debug("mbgl: ", e);
+maplibre.on("message", function(e) {
+  debug("maplibre: ", e);
   if (e.severity == "WARNING" || e.severity == "ERROR") {
-    console.log("mbgl:", e);
+    console.log("maplibre:", e);
   }
 });
 
 function getMap() {
   debug("Creating map");
-  var _map = new mbgl.Map({
-    mode: "static",
+  var _map = new maplibre.Map({
     ratio: 1.0,
     request: function(req, callback) {
       debug("request: " + JSON.stringify(req));
@@ -32,11 +31,20 @@ function getMap() {
           debug("Request for " + req.url + " complete in " + (Date.now() - start) + "ms");
         });
       } else if (protocol === "http" || protocol === "https") {
+        // Add proper headers for tile requests
+        const headers = {
+          'User-Agent': 'StaticMaps-gl/1.0',
+          'Accept': '*/*',
+          'Accept-Encoding': 'gzip, deflate'
+        };
+        
         request(
           {
             url: req.url,
             encoding: null,
-            gzip: true
+            gzip: true,
+            headers: headers,
+            timeout: 10000
           },
           function(err, res, body) {
             var duration = Date.now() - start;
@@ -77,6 +85,7 @@ function getMap() {
               callback(null, response);
             } else {
               //Dont make rendering fail if a resource is missing
+              debug("Request failed with status " + res.statusCode + " for " + req.url);
               return callback(null, {});
             }
           }

@@ -1,6 +1,6 @@
 # StaticMaps-gl
 
-Static map rendering with mapbox-gl. Renders a static map image from a mapbox-gl style, optionally overlaying GeoJSON data sent from the client.
+Static map rendering with maplibre-gl. Renders a static map image from a maplibre-gl style, optionally overlaying GeoJSON data sent from the client.
 
 Multiple styles are supported, and must be specified with a config file. For an example config file see [backgrounds.json](backgrounds.json).
 
