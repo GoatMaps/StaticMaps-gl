@@ -1,7 +1,7 @@
 {
   "name": "StaticMaps-gl",
-  "version": "0.0.4",
-  "description": "Static map rendering with mapbox-gl",
+  "version": "0.0.5",
+  "description": "Static map rendering with maplibre-gl",
   "keywords": [],
   "main": "./index.js",
   "repository": {
@@ -10,14 +10,14 @@
   },
   "license": "BSD-2-Clause",
   "dependencies": {
-    "@mapbox/mapbox-gl-native": "^5.0.2",
-    "@mapbox/sphericalmercator": "^1.1.0",
-    "@turf/bbox": "^6.0.1",
-    "debug": "^4.1.1",
-    "express": "^4.17.1",
-    "generic-pool": "^3.7.1",
-    "request": "^2.88.0",
-    "sharp": "^0.22.0"
+    "@maplibre/maplibre-gl-native": "^6.1.0",
+    "@mapbox/sphericalmercator": "^2.0.1",
+    "@turf/bbox": "^7.2.0",
+    "debug": "^4.3.4",
+    "express": "^5.1.0",
+    "generic-pool": "^3.9.0",
+    "node-fetch": "^3.3.2",
+    "sharp": "^0.34.1"
   },
   "devDependencies": {},
   "scripts": {}

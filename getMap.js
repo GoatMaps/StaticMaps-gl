@@ -1,20 +1,18 @@
 const debug = require("debug")("StaticMaps-gl.getMap");
 const genericPool = require("generic-pool");
-const mbgl = require("@mapbox/mapbox-gl-native");
-const request = require("request");
+const maplibre = require("@maplibre/maplibre-gl-native");
 const fs = require("fs");
 
-mbgl.on("message", function(e) {
-  debug("mbgl: ", e);
+maplibre.on("message", function(e) {
+  debug("maplibre: ", e);
   if (e.severity == "WARNING" || e.severity == "ERROR") {
-    console.log("mbgl:", e);
+    console.log("maplibre:", e);
   }
 });
 
 function getMap() {
   debug("Creating map");
-  var _map = new mbgl.Map({
-    mode: "static",
+  var _map = new maplibre.Map({
     ratio: 1.0,
     request: function(req, callback) {
       debug("request: " + JSON.stringify(req));
@@ -32,55 +30,62 @@ function getMap() {
           debug("Request for " + req.url + " complete in " + (Date.now() - start) + "ms");
         });
       } else if (protocol === "http" || protocol === "https") {
-        request(
-          {
-            url: req.url,
-            encoding: null,
-            gzip: true
-          },
-          function(err, res, body) {
-            var duration = Date.now() - start;
+        // Add proper headers for tile requests
+        const headers = {
+          'User-Agent': 'StaticMaps-gl/1.0',
+          'Accept': '*/*',
+          'Accept-Encoding': 'gzip, deflate'
+        };
+        
+        // Use dynamic import for node-fetch 3.x
+        import('node-fetch').then(({ default: fetch }) => {
+          fetch(req.url, {
+            headers: headers,
+            timeout: 10000
+          })
+          .then(res => {
+            const duration = Date.now() - start;
             if (duration > 500) {
-              if (res === undefined) {
-                // If request timed out response will be undefined
-                debug("Request for " + req.url + " failed in " + duration + "ms.");
-              } else {
-                // Headers are needed for debugging cases of slow responses from AWS s3
-                debug(
-                  "Request for " +
-                    req.url +
-                    " complete in " +
-                    duration +
-                    "ms.  Headers:" +
-                    JSON.stringify(res.headers || null)
-                );
-              }
+              debug(
+                "Request for " +
+                  req.url +
+                  " complete in " +
+                  duration +
+                  "ms.  Status:" +
+                  res.status
+              );
             } else {
               debug("Request for " + req.url + " complete in " + duration + "ms");
             }
-            if (err) {
-              callback(err);
-            } else if (res.statusCode == 200) {
-              var response = {};
-              if (res.headers.modified) {
-                response.modified = new Date(res.headers.modified);
-              }
-              if (res.headers.expires) {
-                response.expires = new Date(res.headers.expires);
-              }
-              if (res.headers.etag) {
-                response.etag = res.headers.etag;
-              }
-
-              response.data = body;
-
-              callback(null, response);
+            
+            if (res.ok) {
+              return res.buffer().then(body => {
+                var response = {};
+                if (res.headers.get('last-modified')) {
+                  response.modified = new Date(res.headers.get('last-modified'));
+                }
+                if (res.headers.get('expires')) {
+                  response.expires = new Date(res.headers.get('expires'));
+                }
+                if (res.headers.get('etag')) {
+                  response.etag = res.headers.get('etag');
+                }
+                response.data = body;
+                callback(null, response);
+              });
             } else {
-              //Dont make rendering fail if a resource is missing
+              debug("Request failed with status " + res.status + " for " + req.url);
               return callback(null, {});
             }
-          }
-        );
+          })
+          .catch(err => {
+            debug("Request error for " + req.url + ": " + err.message);
+            callback(err);
+          });
+        }).catch(err => {
+          debug("Failed to import node-fetch: " + err.message);
+          callback(err);
+        });
       } else {
         debug(`request for invalid url: "${req.url}"`);
         return callback(`request for invalid url: "${req.url}"`);
