@@ -65,10 +65,9 @@ function handleRequest(req, res, width, height, background, zoom, center, format
         return res.status(404).send("Invalid background.");
       }
       //empty post body produces an empty dict instead of undefined, so check number of keys
-      if (Object.keys(req.body).length > 0) {
+      if (req.body && Object.keys(req.body).length > 0) {
         style = mapUtils.addOverlayDataToStyle(style, req.body);
       }
-
       map.load(style);
       const options = {
         center: center,
@@ -101,13 +100,20 @@ const port = 3000;
 app.listen(port, () => console.log(`StaticMaps-gl listening on port ${port}!`));
 
 // URL that doesn't specify a location, must be a post so location can be based on posted GeoJSON
-app.post("/:width(\\d+)x:height(\\d+)/:background.:format", function(req, res) {
+app.post("/:width/:height/:background.:format", function(req, res) {
   debug("got request " + JSON.stringify(req.params));
+  const width = parseInt(req.params.width);
+  const height = parseInt(req.params.height);
+  
+  if (isNaN(width) || isNaN(height)) {
+    return res.status(400).send("Width and height must be numbers.");
+  }
+  
   handleExtentRequest(
     req,
     res,
-    parseInt(req.params.width),
-    parseInt(req.params.height),
+    width,
+    height,
     req.params.background,
     undefined,
     req.params.format
@@ -116,7 +122,7 @@ app.post("/:width(\\d+)x:height(\\d+)/:background.:format", function(req, res) {
 
 // URL that specifies a bounds. Zoom will be calculated to fit requested size. Post data is optional.
 app
-  .route("/:bounds/:width(\\d+)x:height(\\d+)/:background.:format")
+  .route("/:bounds/:width/:height/:background.:format")
   .get(function(req, res) {
     handleRequestWithBounds(req, res);
   })
@@ -128,6 +134,12 @@ function handleRequestWithBounds(req, res) {
   debug("got request " + JSON.stringify(req.params));
   const boundsString = req.params.bounds;
   const bounds = boundsString.split(",").map(i => parseFloat(i));
+  const width = parseInt(req.params.width);
+  const height = parseInt(req.params.height);
+
+  if (isNaN(width) || isNaN(height)) {
+    return res.status(400).send("Width and height must be numbers.");
+  }
 
   if (bounds.length != 4) {
     return res.status(400).send("Bounds must have 4 values.");
@@ -144,8 +156,8 @@ function handleRequestWithBounds(req, res) {
   handleExtentRequest(
     req,
     res,
-    parseInt(req.params.width),
-    parseInt(req.params.height),
+    width,
+    height,
     req.params.background,
     bounds,
     req.params.format
@@ -154,7 +166,7 @@ function handleRequestWithBounds(req, res) {
 
 // URL that specifies a center and zoom. Post data is optional.
 app
-  .route("/:zoom/:lon/:lat/:width(\\d+)x:height(\\d+)/:background.:format")
+  .route("/:zoom/:lon/:lat/:width/:height/:background.:format")
   .get(function(req, res) {
     handleRequestWithCoordinates(req, res);
   })
@@ -166,6 +178,13 @@ function handleRequestWithCoordinates(req, res) {
   const zoom = parseFloat(req.params.zoom);
   const lat = parseFloat(req.params.lat);
   const lon = parseFloat(req.params.lon);
+  const width = parseInt(req.params.width);
+  const height = parseInt(req.params.height);
+  
+  if (isNaN(width) || isNaN(height)) {
+    return res.status(400).send("Width and height must be numbers.");
+  }
+  
   if (zoom < 0 || zoom > 20) {
     return res.status(400).send("Zoom must be in range 0-20.");
   } else if (Math.abs(lat) > maxLat) {
@@ -176,8 +195,8 @@ function handleRequestWithCoordinates(req, res) {
   handleRequest(
     req,
     res,
-    parseInt(req.params.width),
-    parseInt(req.params.height),
+    width,
+    height,
     req.params.background,
     zoom,
     [lon, lat],
