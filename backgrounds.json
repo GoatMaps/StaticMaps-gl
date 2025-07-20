@@ -1,5 +1,5 @@
 {
-  "default": "./style.json",
-  "osm": "./osm-style.json",
-  "carto": "./carto-style.json"
+	"default": "./style.json",
+	"osm": "./osm-style.json",
+	"carto": "./carto-style.json"
 }

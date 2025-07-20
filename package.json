@@ -1,24 +1,24 @@
 {
-  "name": "StaticMaps-gl",
-  "version": "0.0.5",
-  "description": "Static map rendering with maplibre-gl",
-  "keywords": [],
-  "main": "./index.js",
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/mapbox/StaticMaps-gl.git"
-  },
-  "license": "BSD-2-Clause",
-  "dependencies": {
-    "@maplibre/maplibre-gl-native": "^6.1.0",
-    "@mapbox/sphericalmercator": "^2.0.1",
-    "@turf/bbox": "^7.2.0",
-    "debug": "^4.3.4",
-    "express": "^5.1.0",
-    "generic-pool": "^3.9.0",
-    "node-fetch": "^3.3.2",
-    "sharp": "^0.34.1"
-  },
-  "devDependencies": {},
-  "scripts": {}
+	"name": "StaticMaps-gl",
+	"version": "0.0.5",
+	"description": "Static map rendering with maplibre-gl",
+	"keywords": [],
+	"main": "./index.js",
+	"repository": {
+		"type": "git",
+		"url": "git://github.com/mapbox/StaticMaps-gl.git"
+	},
+	"license": "BSD-2-Clause",
+	"dependencies": {
+		"@maplibre/maplibre-gl-native": "^6.1.0",
+		"@mapbox/sphericalmercator": "^2.0.1",
+		"@turf/bbox": "^7.2.0",
+		"debug": "^4.3.4",
+		"express": "^5.1.0",
+		"generic-pool": "^3.9.0",
+		"node-fetch": "^3.3.2",
+		"sharp": "^0.34.1"
+	},
+	"devDependencies": {},
+	"scripts": {}
 }
